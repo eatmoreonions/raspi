@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# added to git repository 11/8/2013
-
 import os
 import re
 import xively
@@ -9,6 +7,13 @@ import subprocess
 import time
 import datetime
 import sys
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read('xivelykeys.txt')
+
+FEED_ID = config.get('XivelyKeys', 'FEED_ID')
+API_KEY = config.get('XivelyKeys', 'API_KEY')
 
 sys.path.append('/home/pi/python/Adafruit-Raspberry-Pi-Python-Code/Adafruit_BMP085')
 

@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# Version 5
+#   read in twitter keys from config file
+
 # Version 4
 #   added light sensor
 
@@ -20,6 +23,7 @@ import urllib
 import sys
 import twitter
 from datetime import datetime, timedelta
+import ConfigParser
 
 io.setmode(io.BCM)
 pir_pin = 18
@@ -31,10 +35,13 @@ i = 0
 c = 0
 
 # Twitter keys read in from twitterkeys.txt
-#CONSUMER_KEY=
-#CONSUMER_SECRET=
-#ACCESS_TOKEN_KEY=
-#ACCESS_TOKEN_SECRET=
+config = ConfigParser.RawConfigParser()
+config.read('twitterkeys.txt')
+
+CONSUMER_KEY = config.get('TwitterKeys', 'CONSUMER_KEY')
+CONSUMER_SECRET = config.get('TwitterKeys', 'CONSUMER_SECRET')
+ACCESS_TOKEN_KEY = config.get('TwitterKeys', 'ACCESS_TOKEN_KEY')
+ACCESS_TOKEN_SECRET = config.get('TwitterKeys', 'ACCESS_TOKEN_SECRET')
 
 # Initialize lasttweet variable to one hour ago so we can alert immediately
 lasttweet=datetime.now()-timedelta(hours=1)

@@ -8,6 +8,12 @@ import datetime
 import httplib
 import urllib
 import sys
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read('envkeys.txt')
+
+API_KEY = config.get('ThingSpeakKey', 'API_KEY')
 
 sys.path.append('/home/pi/python/Adafruit-Raspberry-Pi-Python-Code/Adafruit_BMP085')
 
