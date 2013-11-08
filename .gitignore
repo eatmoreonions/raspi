@@ -1,0 +1,9 @@
+Adafruit-Raspberry-Pi-Python-Code/
+Adafruit_DHT
+archive/
+dht.pyc
+lastlightoff
+lastlighton
+lastmotion
+start-motion.sh
+tom.txt
