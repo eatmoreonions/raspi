@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+# Version 2
+#   moved to new twitter module
+
+import RPi.GPIO as io
+import os
+import re
+import subprocess
+import time
+import datetime
+import httplib
+import urllib
+import sys
+import twitter
+from datetime import datetime, timedelta
+
+io.setmode(io.BCM)
+pir_pin = 18
+
+i = 0
+
+# Twitter keys
+CONSUMER_KEY="quPUHkoW39yq2UC7vK6qw"
+CONSUMER_SECRET="TkkhciJDntn91kOnx84axML0M8KRnK9SK8xhPxz0H48"
+ACCESS_TOKEN_KEY="1450095217-CQevBBW1NkmoaPz66PXQ4lYxbxdDkoBG7fphsCw"
+ACCESS_TOKEN_SECRET="ZAN3ULd9fbJ571aA79nAo96xLvprBQ6h0HsUNnmqjYM"
+
+# Initialize lasttweet variable to one hour ago so we can alert immediately
+lasttweet=datetime.now()-timedelta(hours=1)
+
+def tweetDirect(dmessage):
+  api = twitter.Api(consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET, access_token_key=ACCESS_TOKEN_KEY, access_token_secret=ACCESS_TOKEN_SECRET)
+
+  api.PostDirectMessage(dmessage, screen_name="eatmoreonions")
+  return{}
+
+def tweetReadDirect():
+  api = twitter.Api(consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET, access_token_key=ACCESS_TOKEN_KEY, access_token_secret=ACCESS_TOKEN_SECRET)
+  messages=api.GetDirectMessages()
+  if messages:
+    sender = str([s.sender_screen_name for s in messages])
+    body =  str([s.text for s in messages])
+    messid = str([s.id for s in messages])
+    cleanmessid = messid.replace('[', '').replace(']', '')
+    cleanbody = body.replace('[', '').replace(']', '').replace("'", "")
+    cleansender = sender.replace('[', '').replace(']', '').replace("'", "")
+    api.DestroyDirectMessage(cleanmessid)
+    return{'sender':cleansender[1:], 'body':cleanbody[1:]}
+  else:
+    return{}
+ 
+io.setup(pir_pin, io.IN)
+
+# sleep for 60 seconds to not alert on my own movement
+time.sleep(60)
+ 
+while True:
+    print("checking alarm...")
+    if io.input(pir_pin) and (datetime.now() - lasttweet) > timedelta(minutes=30):
+        lasttweet=datetime.now()
+        string2tweet='motion alert ' + str(lasttweet)
+        print string2tweet
+        tweetDirect(string2tweet)
+    time.sleep(16)
+    i += 1
+    if i == 4:
+        indirect = tweetReadDirect()
+        if indirect:
+          print indirect['sender'] and indirect['body']
+          if indirect['sender'] == "eatmoreonions" and indirect['body'] == "Enditall":
+            print("terminate message received")
+            break
+        i = 0
+
