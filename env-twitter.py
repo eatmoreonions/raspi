@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# version 4
+#   DHT has become unreliable - switched to BMP for temp measurement
+
 # version 3
 #   added twitter command to take a pic and upload to dropbox
 
@@ -95,7 +98,7 @@ def read_dht():
       temperature = float(matches.group(1))*(9.0/5.0) + 32
       if DEBUG:
         print "Temperature:    %.1f F" % temperature
-      return {'temperature':temperature,'humidity':humidity}
+      return {'temp':temperature,'humidity':humidity}
 
     time.sleep(3)
 
@@ -135,14 +138,15 @@ def run():
 
   while True:
     bmpdata = read_bmp085()
-    dhtdata = read_dht()
+#    dhtdata = read_dht()
 
     if DEBUG:
-      print "Updating ThingSpeak feed with temperature: %.2f F" % dhtdata['temperature']
+      print "Updating ThingSpeak feed with temperature: %.2f F" % bmpdata['temp']
       print "Updating ThingSpeak feed with pressure: %.2f in" % bmpdata['pressure']
-      print "Updating ThingSpeak feed with humidity: %.2f percent" % dhtdata['humidity']
+#      print "Updating ThingSpeak feed with humidity: %.2f percent" % dhtdata['humidity']
 
-    params = urllib.urlencode({'field1': dhtdata['temperature'], 'field2': bmpdata['pressure'], 'field3': dhtdata['humidity']})
+#    params = urllib.urlencode({'field1': dhtdata['temp'], 'field2': bmpdata['pressure'], 'field3': dhtdata['humidity']})
+    params = urllib.urlencode({'field1': bmpdata['temp'], 'field2': bmpdata['pressure']})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     conn.request("POST", "/update?key=GRXUBE74OXFF4Z5N", params, headers)
@@ -165,7 +169,7 @@ def run():
       print inbounddirect['sender'] and inbounddirect['body']
       if inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Temp":
         print("temp request message received")
-        string2tweet=datenow + 'Temperature is ' + repr(round(dhtdata['temperature'],1))
+        string2tweet=datenow + 'Temperature is ' + repr(round(bmpdata['temp'],1))
         tweetDirect(string2tweet)
       elif inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Hum":
         print("humidity request message received")
