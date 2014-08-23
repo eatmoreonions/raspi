@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# version 5
+#   included variable for twitter SENDER
 # version 4
 #   DHT has become unreliable - switched to BMP for temp measurement
 
@@ -50,6 +52,7 @@ CONSUMER_KEY = config.get('TwitterKeys', 'CONSUMER_KEY')
 CONSUMER_SECRET = config.get('TwitterKeys', 'CONSUMER_SECRET')
 ACCESS_TOKEN_KEY = config.get('TwitterKeys', 'ACCESS_TOKEN_KEY')
 ACCESS_TOKEN_SECRET = config.get('TwitterKeys', 'ACCESS_TOKEN_SECRET')
+SENDER = config.get('TwitterKeys', 'SENDER')
 
 # Initialize lasttweet variable to one hour ago so we can alert immediately
 lasttweet=datetime.now()-timedelta(hours=1)
@@ -112,7 +115,7 @@ def takepic():
 
 def tweetDirect(dmessage):
   api = twitter.Api(consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET, access_token_key=ACCESS_TOKEN_KEY, access_token_secret=ACCESS_TOKEN_SECRET)
-  api.PostDirectMessage(dmessage, screen_name="eatmoreonions")
+  api.PostDirectMessage(dmessage, screen_name=SENDER)
   return{}
 
 def tweetReadDirect():
@@ -167,19 +170,19 @@ def run():
       dtn=datetime.now()
       datenow=dtn.strftime("%H:%M:%S %D ")
       print inbounddirect['sender'] and inbounddirect['body']
-      if inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Temp":
+      if inbounddirect['sender'] == SENDER and inbounddirect['body'] == "Temp":
         print("temp request message received")
         string2tweet=datenow + 'Temperature is ' + repr(round(bmpdata['temp'],1))
         tweetDirect(string2tweet)
-      elif inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Hum":
+      elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "Hum":
         print("humidity request message received")
         string2tweet=datenow + 'Humidty is ' + repr(round(dhtdata['humidity'],1))
         tweetDirect(string2tweet)
-      elif inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Press":
+      elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "Press":
         print("pressure request message received")
         string2tweet=datenow + 'Pressure is ' + repr(round(bmpdata['pressure'],1))
         tweetDirect(string2tweet)
-      elif inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "Upload":
+      elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "Upload":
         print("Picture request received")
         takepic()
         dtn=datetime.now()
@@ -191,7 +194,7 @@ def run():
         print "uploaded: ", response
         string2tweet=datenow + 'Picture uploaded'
         tweetDirect(string2tweet)
-      elif inbounddirect['sender'] == "eatmoreonions" and inbounddirect['body'] == "?":
+      elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "?":
         print("Syntax request message received")
         string2tweet=datenow + 'Options are Temp  Hum  or Press'
         tweetDirect(string2tweet)

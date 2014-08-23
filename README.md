@@ -3,6 +3,15 @@ raspi
 
 raspberry pi python projects
 
+Dependencies
+python pip
+ sudo apt-get install python-pip
+python twitter support
+ sudo pip install python-twitter
+python dropbox support
+ sudo pip install dropbox
+
+
 dbupload.py = simple script to upload a file to dropbox.  
 
 dht.py = script to read the temperature and humidity from a DHT22 and output to screen
