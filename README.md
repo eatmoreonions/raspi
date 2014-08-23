@@ -4,12 +4,17 @@ raspi
 raspberry pi python projects
 
 Dependencies
-python pip
+
+python pip: 
  sudo apt-get install python-pip
-python twitter support
+ 
+python twitter support: 
  sudo pip install python-twitter
-python dropbox support
+ 
+python dropbox support: 
  sudo pip install dropbox
+ 
+
 
 
 dbupload.py = simple script to upload a file to dropbox.  
