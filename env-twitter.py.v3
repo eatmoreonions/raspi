@@ -1,9 +1,5 @@
 #!/usr/bin/python
 
-# version 7
-#   added upload to wunderground pws site and turned DHT22 back on for humidity
-# version 6
-#   moved to picamera python library
 # version 5
 #   included variable for twitter SENDER
 # version 4
@@ -23,17 +19,20 @@ import datetime
 import httplib
 import urllib
 import sys
-import picamera
 import twitter
 import dropbox
-import Adafruit_DHT
 import ConfigParser
+
 from datetime import datetime, timedelta
-import Adafruit_BMP.BMP085 as BMP085
+
+sys.path.append('/home/tomc/Adafruit-Raspberry-Pi-Python-Code/Adafruit_BMP085')
+
+from Adafruit_BMP085 import BMP085
 
 # Dropbox API Keys
 config = ConfigParser.RawConfigParser()
 config.read('dbkeys.txt')
+
 db_app_key = config.get('DropBoxKeys', 'db_app_key')
 db_app_secret = config.get('DropBoxKeys', 'db_app_secret')
 db_access_token = config.get('DropBoxKeys', 'db_access_token')
@@ -41,18 +40,14 @@ db_access_token = config.get('DropBoxKeys', 'db_access_token')
 # Thingspeak API key
 config = ConfigParser.RawConfigParser()
 config.read('thingspeakkeys.txt')
-API_KEY = config.get('ThingSpeakKeys', 'API_KEY')
 
-# Wunderground pws station id and password
-config = ConfigParser.RawConfigParser()
-config.read('wunderground.txt')
-pwsstationid = config.get('PWS', 'stationid')
-pwspassword = config.get('PWS', 'password')
+API_KEY = config.get('ThingSpeakKeys', 'API_KEY')
 
 # Twitter keys
 # Twitter keys read in from twitterkeys.txt
 config = ConfigParser.RawConfigParser()
 config.read('twitterkeys.txt')
+
 CONSUMER_KEY = config.get('TwitterKeys', 'CONSUMER_KEY')
 CONSUMER_SECRET = config.get('TwitterKeys', 'CONSUMER_SECRET')
 ACCESS_TOKEN_KEY = config.get('TwitterKeys', 'ACCESS_TOKEN_KEY')
@@ -70,18 +65,16 @@ def read_bmp085():
   if DEBUG:
     print "reading bmp085 temperature and pressure"
 
-  bmp = BMP085.BMP085()
-  temp = bmp.read_temperature()
-  pressure = bmp.read_pressure()
-  if DEBUG:
-    print "Temperature: %.2f C" % temp
-    print "Pressure:    %.2f hPa" % pressure
+  bmp = BMP085(0x77)
+  temp = bmp.readTemperature()
+  pressure = bmp.readPressure()
 
   temp = round(((9.0/5.0)*temp + 32), 2)
   pressure = (pressure / 100)*0.0295301
   pressure = round(pressure, 2)
+
   if DEBUG:
-    print "Temperature: %.2f F" % temp
+    print "bmp085 Temperature: %.2f F" % temp
     print "Pressure:    %.2f in." % pressure
 
   return {'temp':temp, 'pressure':pressure}
@@ -89,18 +82,36 @@ def read_bmp085():
 def read_dht():
   if DEBUG:
     print "reading dht temperature and humidity"
-  dhthumidity, dhttemp = Adafruit_DHT.read_retry(22, 4)
-  if dhthumidity is not None and dhttemp is not None:
-    print 'Temp={0:0.1f}*C  Humidity={1:0.1f}%'.format(dhttemp, dhthumidity)
-    return {'dhttemp':dhttemp, 'dhthumidity':dhthumidity}
-  else:
-    return {'dhttemp':0, 'dhthumidity':0}
 
+  while True:
+    output = subprocess.check_output(["./Adafruit_DHT", "2302", "4"]);
+    if DEBUG:
+      print output
+
+  # search for humidity 
+    matches = re.search("Hum =\s+([0-9.]+)", output)
+    if (matches):
+      humidity = float(matches.group(1))
+      if DEBUG:
+        print "Humidity:    %.1f %%" % humidity
+
+  # search for temperature 
+    matches = re.search("Temp =\s+([0-9.]+)", output)
+    if (matches):
+      temperature = float(matches.group(1))*(9.0/5.0) + 32
+      if DEBUG:
+        print "Temperature:    %.1f F" % temperature
+      return {'temp':temperature,'humidity':humidity}
+
+    time.sleep(3)
+
+def run_command(self,*args):
+  p=subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  return p.communicate()
 
 def takepic():
-  with picamera.PiCamera() as cam:
-    cam.resolution = (600, 600)
-    cam.capture('/home/tomc/images/still.jpg')
+  newpic, error = run_command('python', '/usr/bin/sudo', '/usr/bin/raspistill', '-t', '1', '-rot', '180', '-w', '600', '-h', '600', '-o', '/home/tomc/images/still.jpg')
+
 
 def tweetDirect(dmessage):
   api = twitter.Api(consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET, access_token_key=ACCESS_TOKEN_KEY, access_token_secret=ACCESS_TOKEN_SECRET)
@@ -130,14 +141,15 @@ def run():
 
   while True:
     bmpdata = read_bmp085()
-    dhtdata = read_dht()
+#    dhtdata = read_dht()
 
     if DEBUG:
       print "Updating ThingSpeak feed with temperature: %.2f F" % bmpdata['temp']
       print "Updating ThingSpeak feed with pressure: %.2f in" % bmpdata['pressure']
-      print "Updating ThingSpeak feed with humidity: %.2f percent" % dhtdata['dhthumidity']
+#      print "Updating ThingSpeak feed with humidity: %.2f percent" % dhtdata['humidity']
 
-    params = urllib.urlencode({'field1': bmpdata['temp'], 'field2': bmpdata['pressure'], 'field3': dhtdata['dhthumidity']})
+#    params = urllib.urlencode({'field1': dhtdata['temp'], 'field2': bmpdata['pressure'], 'field3': dhtdata['humidity']})
+    params = urllib.urlencode({'field1': bmpdata['temp'], 'field2': bmpdata['pressure']})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     conn.request("POST", "/update?key=GRXUBE74OXFF4Z5N", params, headers)
@@ -145,25 +157,12 @@ def run():
     print response.status, response.reason
     data = response.read()
     conn.close()
-###
-#    print "sending to wunderground"
-#    try:
-#      conn = httplib.HTTPConnection("weatherstation.wunderground.com")
-#      path = "/weatherstation/updateweatherstation.php?ID=" + pwsstationid + "&PASSWORD=" + pwspassword + "&dateutc=now" + "&tempf=" + str(bmpdata['temp']) + "&baromin=" + str(bmpdata['pressure']) + "&softwaretype=RaspberryPi&action=updateraw"
-#      print path
-#      conn.request("GET", path)
-#      res = conn.getresponse()
-#      print res.status
-      # checks whether there was a successful connection (HTTP code 200 and content of page contains "success")
-#      if ((int(res.status) == 200) & ("success" in res.read())):
-#        print "%s - Successful Upload to Wunderground\n" % str(datetime.now())
-#      else:
-#        print "%s -- Upload not successful, check username, password, and formating..." % (str(datetime.now()))
-#    except IOError as e: #in case of any kind of socket error
-#      print "{0} -- I/O error({1}): {2}".format(datetime.now(), e.errno, e.strerror)
 
+#    if dhtdata['temperature'] > 90 and (datetime.now() - lasttweet) > timedelta(hours=1):
+#      lasttweet=datetime.now()
+#      string2tweet='Temperature is ' + repr(round(dhtdata['temperature'],1))
+#      tweetDirect(string2tweet)
 
-###
     time.sleep(300)
  
     inbounddirect = tweetReadDirect()
@@ -197,7 +196,7 @@ def run():
         tweetDirect(string2tweet)
       elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "?":
         print("Syntax request message received")
-        string2tweet=datenow + 'Options are Temp  Hum  Press or Upload'
+        string2tweet=datenow + 'Options are Temp  Hum  or Press'
         tweetDirect(string2tweet)
 
 
