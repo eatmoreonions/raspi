@@ -146,21 +146,21 @@ def run():
     data = response.read()
     conn.close()
 ###
-#    print "sending to wunderground"
-#    try:
-#      conn = httplib.HTTPConnection("weatherstation.wunderground.com")
-#      path = "/weatherstation/updateweatherstation.php?ID=" + pwsstationid + "&PASSWORD=" + pwspassword + "&dateutc=now" + "&tempf=" + str(bmpdata['temp']) + "&baromin=" + str(bmpdata['pressure']) + "&softwaretype=RaspberryPi&action=updateraw"
-#      print path
-#      conn.request("GET", path)
-#      res = conn.getresponse()
-#      print res.status
+    print "sending to wunderground"
+    try:
+      conn = httplib.HTTPConnection("weatherstation.wunderground.com")
+      path = "/weatherstation/updateweatherstation.php?ID=" + pwsstationid + "&PASSWORD=" + pwspassword + "&dateutc=now" + "&tempf=" + str(bmpdata['temp']) + "&baromin=" + str(bmpdata['pressure']) + "&humidity=" + str(dhtdata['dhthumidity']) + "&softwaretype=RaspberryPi&action=updateraw"
+      print path
+      conn.request("GET", path)
+      res = conn.getresponse()
+      print res.status
       # checks whether there was a successful connection (HTTP code 200 and content of page contains "success")
-#      if ((int(res.status) == 200) & ("success" in res.read())):
-#        print "%s - Successful Upload to Wunderground\n" % str(datetime.now())
-#      else:
-#        print "%s -- Upload not successful, check username, password, and formating..." % (str(datetime.now()))
-#    except IOError as e: #in case of any kind of socket error
-#      print "{0} -- I/O error({1}): {2}".format(datetime.now(), e.errno, e.strerror)
+      if ((int(res.status) == 200) & ("success" in res.read())):
+        print "%s - Successful Upload to Wunderground\n" % str(datetime.now())
+      else:
+        print "%s -- Upload not successful, check username, password, and formating..." % (str(datetime.now()))
+    except IOError as e: #in case of any kind of socket error
+      print "{0} -- I/O error({1}): {2}".format(datetime.now(), e.errno, e.strerror)
 
 
 ###
