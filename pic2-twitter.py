@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# version 5
+#   updated dropbox api to v2
 # version 4
 #   switched to picamera python interface
 # version 3
@@ -51,7 +53,7 @@ DEBUG=True
 
 def takepic():
   camera = picamera.PiCamera()
-  camera.capture('/home/tomc/images/still.jpg')
+  camera.capture('/home/tomc/Pictures/still.jpg')
   camera.close()
 
 def tweetDirect(dmessage):
@@ -66,10 +68,10 @@ def tweetReadDirect():
     sender = str([s.sender_screen_name for s in messages])
     body =  str([s.text for s in messages])
     messid = str([s.id for s in messages])
-    cleanmessid = messid.replace('[', '').replace(']', '')
+    cleanmessid = messid.replace('[', '').replace(']', '').replace('L', '')
     cleanbody = body.replace('[', '').replace(']', '').replace("'", "")
     cleansender = sender.replace('[', '').replace(']', '').replace("'", "")
-    api.DestroyDirectMessage(cleanmessid)
+    api.DestroyDirectMessage(int(cleanmessid))
     return{'sender':cleansender[1:], 'body':cleanbody[1:]}
   else:
     return{}
@@ -91,12 +93,13 @@ def run():
         print("Picture request received")
         takepic()
         dtn=datetime.now()
-        imagename='still' + dtn.strftime("%m%d%Y-%H%M%S") + '.jpg'
-        flow = dropbox.client.DropboxOAuth2FlowNoRedirect(db_app_key, db_app_secret)
-        client = dropbox.client.DropboxClient(db_access_token)
-        f = open('/home/tomc/images/still.jpg')
-        response = client.put_file(imagename, f)
-        print "uploaded: ", response
+        imagename='/still' + dtn.strftime("%m%d%Y-%H%M%S") + '.jpg'
+
+        client = dropbox.Dropbox(db_access_token)
+        f = open('/home/tomc/Pictures/still.jpg')
+        data = f.read()
+        client.files_upload(data, imagename)
+
         string2tweet=datenow + 'Picture uploaded'
         tweetDirect(string2tweet)
       elif inbounddirect['sender'] == SENDER and inbounddirect['body'] == "?":
@@ -104,6 +107,6 @@ def run():
         string2tweet=datenow + 'To upload picture send Upload'
         tweetDirect(string2tweet)
 
-    time.sleep(300)
+    time.sleep(60)
 
 run()

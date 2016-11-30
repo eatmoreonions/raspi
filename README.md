@@ -27,4 +27,4 @@ env-twitter.py = script which reads temperature, humidity, and pressure from a D
 
 env-xively.py = script which reads the temperature, pressure, and humidity from a DHT22 and BMP085 and updates a Xively feed
 
-
+picX-twitter.py = monitor twitter account for dm, when a message is found with the text Upload, take a picture and upload to dropbox.
